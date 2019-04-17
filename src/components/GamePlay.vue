@@ -32,12 +32,12 @@
             </div>
 
 
-            <div class="full-row revolution" v-if="!hasRevolution(roundIndex) && roundIndex==round">
+            <!-- <div class="full-row revolution" v-if="!hasRevolution(roundIndex) && roundIndex==round">
               <button type="button" name="button" @click="startUprising" v-if="!revolution"
                 :disabled="totalLP < 10*players.length">
                 Start collective uprising
               </button>
-              <div class="" v-if="revolution"> <!--v-if="revolution" -->
+              <div class="" v-if="revolution">
                 <button type="button" name="button" @click="commonise"
                 :disabled="revolutionPoints < 10*players.length || revolutionaries.length < 2">
                   Commonise!
@@ -54,11 +54,12 @@
               Contribution: {{ lpsForRevolution[playerIndex] }}
             </div>
             <div class="revolution-data"  v-for="(player, playerIndex) in players" v-if="hasRevolution(roundIndex)">
-              <!-- v-for="rev in whichRevolution(roundIndex)" -->
+
               <span class="star" v-if="whichRevolution(roundIndex).revolutionaries.indexOf(player.name) !== -1" ></span>
               <span v-else class="nostar"></span>
               Contribution: {{ whichRevolution(roundIndex).lps[playerIndex] }} LPs
-            </div>
+            </div> -->
+            <Uprising :roundIndex="roundIndex" class="full-row revolution-container"/>
           </div>
         </div>
         <button class="next-round" type="button" name="button" @click="addRound()">Next round</button>
@@ -76,13 +77,15 @@ import UnlockGoods from '@/components/UnlockGoods'
 import PointsTracker from '@/components/PointsTracker'
 import SelectedPlayer from '@/components/SelectedPlayer'
 import Unlocked from '@/components/Unlocked'
+import Uprising from '@/components/Uprising'
 
 export default {
   components: {
     UnlockGoods,
     PointsTracker,
     SelectedPlayer,
-    Unlocked
+    Unlocked,
+    Uprising
   },
   data() {
     return {
@@ -144,64 +147,64 @@ export default {
     viewRound(roundIndex) {
       this.activeRound = roundIndex
     },
-    startUprising() {
-      this.revolution = true
-      // this.players.forEach(p => this.lpsForRevolution.push(0))
-      for(let i=0; i<this.players.length; i++) {
-        this.$set(this.lpsForRevolution, i, 0)
-      }
-      // this.lpsForRevolution = this.players.map(p => 0);
-    },
-    revolutionLPs(action, index) {
-      let modifiedPlayer = {}
-      if (action == 'add') {
-        if (this.players[index].LP > 0) { // > this.lpsForRevolution[index]
-          this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]+1)
-
-          Object.assign(modifiedPlayer, this.players[index])
-          modifiedPlayer.LP--
-          let op = [{
-            p: ['players', index],
-            ld: this.players[index],
-            li: modifiedPlayer
-          }]
-          sharedb.submitOperation(op)
-        }
-      } else if (action == 'sub' && this.lpsForRevolution[index] > 0) {
-        this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]-1)
-
-        Object.assign(modifiedPlayer, this.players[index])
-        modifiedPlayer.LP++
-        // modifiedPlayer.revolutions.push
-        let op = [{
-          p: ['players', index],
-          ld: this.players[index],
-          li: modifiedPlayer
-        }]
-        sharedb.submitOperation(op)
-      }
-    },
-    commonise() {
-      let revolution = {};
-      revolution.revolutionaries = this.revolutionaries
-      revolution.lps = this.lpsForRevolution
-      revolution.round = this.round
-      // empty revolutionaries array
-      this.revolutionaries.splice(0, -1)
-      // ruaj piket e harxhuara nga secili user gjate revolucionit
-      let op = [{
-        p: ['revolutions', this.revolutions.length],
-        li: revolution
-      }]
-      sharedb.submitOperation(op)
-      this.revolution = false
-    },
-    hasRevolution(roundIndex) {
-      return this.revolutions.findIndex(r => r.round == roundIndex) !== -1 ? true : false
-    },
-    whichRevolution(roundIndex) {
-      return this.revolutions.filter(r => r.round == roundIndex)[0]
-    },
+    // startUprising() {
+    //   this.revolution = true
+    //   // this.players.forEach(p => this.lpsForRevolution.push(0))
+    //   for(let i=0; i<this.players.length; i++) {
+    //     this.$set(this.lpsForRevolution, i, 0)
+    //   }
+    //   // this.lpsForRevolution = this.players.map(p => 0);
+    // },
+    // revolutionLPs(action, index) {
+    //   let modifiedPlayer = {}
+    //   if (action == 'add') {
+    //     if (this.players[index].LP > 0) { // > this.lpsForRevolution[index]
+    //       this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]+1)
+    //
+    //       Object.assign(modifiedPlayer, this.players[index])
+    //       modifiedPlayer.LP--
+    //       let op = [{
+    //         p: ['players', index],
+    //         ld: this.players[index],
+    //         li: modifiedPlayer
+    //       }]
+    //       sharedb.submitOperation(op)
+    //     }
+    //   } else if (action == 'sub' && this.lpsForRevolution[index] > 0) {
+    //     this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]-1)
+    //
+    //     Object.assign(modifiedPlayer, this.players[index])
+    //     modifiedPlayer.LP++
+    //     // modifiedPlayer.revolutions.push
+    //     let op = [{
+    //       p: ['players', index],
+    //       ld: this.players[index],
+    //       li: modifiedPlayer
+    //     }]
+    //     sharedb.submitOperation(op)
+    //   }
+    // },
+    // commonise() {
+    //   let revolution = {};
+    //   revolution.revolutionaries = this.revolutionaries
+    //   revolution.lps = this.lpsForRevolution
+    //   revolution.round = this.round
+    //   // empty revolutionaries array
+    //   this.revolutionaries.splice(0, -1)
+    //   // ruaj piket e harxhuara nga secili user gjate revolucionit
+    //   let op = [{
+    //     p: ['revolutions', this.revolutions.length],
+    //     li: revolution
+    //   }]
+    //   sharedb.submitOperation(op)
+    //   this.revolution = false
+    // },
+    // hasRevolution(roundIndex) {
+    //   return this.revolutions.findIndex(r => r.round == roundIndex) !== -1 ? true : false
+    // },
+    // whichRevolution(roundIndex) {
+    //   return this.revolutions.filter(r => r.round == roundIndex)[0]
+    // },
     isRevolutionary(name) {
       let uprisings = [];
       this.revolutions.forEach(r => {
@@ -291,7 +294,7 @@ export default {
       transition: height .5s;
       &.collapsed {
         // height: 50px;
-        .edit-player-box, .revolution-data, .revolution {
+        .edit-player-box, .revolution-data, .revolution, .revolution-container {
           // opacity: 0;
           // visibility: hidden;
           display: none;
@@ -357,28 +360,6 @@ export default {
         button {
           background-color: var(--color-primary);
           border-radius: 2px;
-        }
-      }
-      .revolution {
-        padding: 10px;
-        border: 1px solid gray;
-        button {
-          font-weight: bold;
-          background-color: #ef767a; //#a11a1b;
-          &:hover, &:active, &:disabled, &:focus {
-            border: 1px solid #ef767a;
-          }
-        }
-      }
-      .revolution-data {
-        height: 50px;
-        text-align: center;
-        .star {
-          display: block;
-        }
-        .nostar {
-          height: 25px;
-          display: block;
         }
       }
 
