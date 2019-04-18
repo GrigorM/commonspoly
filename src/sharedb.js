@@ -3,8 +3,8 @@ import { bus } from '@/main';
 
 export default {
   sharedDoc: null,
-  wsUrl: 'ws://localhost:9001',
-  // wsUrl: 'wss://commonspoly.herokuapp.com/',
+  // wsUrl: 'ws://localhost:9001',
+  wsUrl: 'wss://commonspoly.herokuapp.com/',
   initialize(players, code) {
     const sharedbConnection = new sharedb.Connection(new WebSocket(`${this.wsUrl}`)); //ws://commonspoly-backend.herokuapp.com/
     let gameId = Math.floor(Math.random()*1000000);
