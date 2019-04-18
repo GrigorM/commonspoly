@@ -1,6 +1,5 @@
 <template lang="html">
   <div class="point-tracker">
-    <!-- {{displayPointChanges}} -->
 
     <div class="score-modifier" v-if="role === 'master'">
       <div class="score-modifier__b1">
@@ -175,21 +174,25 @@ export default {
       let modifiedPlayer = {}
       Object.assign(modifiedPlayer, this.players[this.playerIndex])
 
-      modifiedPlayer.WP += this.wpChange
-      modifiedPlayer.LP += this.lpChange
+      // modifiedPlayer.WP += this.wpChange
+      // modifiedPlayer.LP += this.lpChange
 
       if (modifiedPlayer[this.context][this.roundIndex-1] && modifiedPlayer[this.context][this.roundIndex-1].wp !== undefined) {
-        modifiedPlayer[this.context][this.roundIndex-1].wp += this.wpChange
+        modifiedPlayer.WP += (this.wpChange - modifiedPlayer[this.context][this.roundIndex-1].wp)
+        modifiedPlayer[this.context][this.roundIndex-1].wp = this.wpChange
       } else {
-        modifiedPlayer[this.context][this.roundIndex-1] = { wp: 0, lp: 0 }
-        modifiedPlayer[this.context][this.roundIndex-1].wp += this.wpChange
+        modifiedPlayer.WP += this.wpChange
+        modifiedPlayer[this.context][this.roundIndex-1] = { wp: this.wpChange, lp: 0 }
+        // modifiedPlayer[this.context][this.roundIndex-1].wp += this.wpChange
       }
 
       if (modifiedPlayer[this.context][this.roundIndex-1] && modifiedPlayer[this.context][this.roundIndex-1].wp !== undefined) {
-        modifiedPlayer[this.context][this.roundIndex-1].lp += this.lpChange
+        modifiedPlayer.LP += (this.lpChange - modifiedPlayer[this.context][this.roundIndex-1].lp)
+        modifiedPlayer[this.context][this.roundIndex-1].lp = this.lpChange
       } else {
-        modifiedPlayer[this.context][this.roundIndex-1] = { wp: 0, lp: 0 }
-        modifiedPlayer[this.context][this.roundIndex-1].lp += this.lpChange
+        modifiedPlayer.LP += this.lpChange
+        modifiedPlayer[this.context][this.roundIndex-1] = { wp: 0, lp: this.lpChange }
+        // modifiedPlayer[this.context][this.roundIndex-1].lp += this.lpChange
       }
 
       let op = [{

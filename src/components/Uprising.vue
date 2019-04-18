@@ -1,6 +1,6 @@
 <template lang="html">
-  <section>
-    <div class="full-row revolution" v-if="!hasRevolution(roundIndex) && roundIndex==round">
+  <section id="revolution-container">
+    <div class="revolution" v-if="!hasRevolution(roundIndex) && roundIndex==round">
       <button type="button" name="button" @click="startUprising" v-if="!revolution"
         :disabled="totalLP < 10*players.length">
         Start collective uprising
@@ -13,20 +13,29 @@
         <span>Total points: {{ revolutionPoints }}</span>
       </div>
     </div>
-    <div class="revolution" v-for="(player, playerIndex) in players" :key="700+playerIndex" v-if="revolution && !hasRevolution(roundIndex)">
-      <input type="checkbox" name="revolutionaries" :value="player.name"
-        v-model="revolutionaries" :disabled="revolutionaries.length >= 2"><br>
-      <span>Contribute LPs</span>
-      <button type="button" name="button" @click="revolutionLPs('sub', playerIndex)">-</button>
-      <button type="button" name="button" @click="revolutionLPs('add', playerIndex)">+</button>
-      Contribution: {{ lpsForRevolution[playerIndex] }}
+    <div class="revolution-grid">
+      <div class="revolution" v-for="(player, playerIndex) in players" :key="700+playerIndex" v-if="revolution && !hasRevolution(roundIndex)">
+        <input type="checkbox" name="revolutionaries" :value="player.name"
+          v-model="revolutionaries" :disabled="revolutionaries.length >= 2"><br>
+        <span>Contribute LPs</span><br/>
+        <div class="custom-input-container">
+          <button type="button" class="custom-input-btn" @click="revolutionLPs('sub', playerIndex)">-</button>
+          <input type="text" name="" class="custom-input" v-model="lpsForRevolution[playerIndex]">
+          <button type="button" class="custom-input-btn" @click="revolutionLPs('add', playerIndex)">+</button>
+        </div>
+
+        <!-- Contribution: {{ lpsForRevolution[playerIndex] }} -->
+      </div>
     </div>
-    <div class="revolution-data"  v-for="(player, playerIndex) in players" v-if="hasRevolution(roundIndex)">
-      <!-- v-for="rev in whichRevolution(roundIndex)" -->
-      <span class="star" v-if="whichRevolution(roundIndex).revolutionaries.indexOf(player.name) !== -1" ></span>
-      <span v-else class="nostar"></span>
-      Contribution: {{ whichRevolution(roundIndex).lps[playerIndex] }} LPs
+    <div class="post-revolution-grid">
+      <div class="revolution-data"  v-for="(player, playerIndex) in players" v-if="hasRevolution(roundIndex)">
+        <!-- v-for="rev in whichRevolution(roundIndex)" -->
+        <span class="star" v-if="whichRevolution(roundIndex).revolutionaries.indexOf(player.name) !== -1" ></span>
+        <span v-else class="nostar"></span>
+        Contribution: {{ whichRevolution(roundIndex).lps[playerIndex] }} LPs
+      </div>
     </div>
+
   </section>
 </template>
 
@@ -52,6 +61,11 @@ export default {
         return sum + player.LP
       }, 0)
     },
+    revolutionPoints() {
+      return this.lpsForRevolution.reduce((sum, contribution) => {
+        return sum + parseInt(contribution)
+      }, 0)
+    }
   },
   methods: {
     startUprising() {
@@ -63,32 +77,12 @@ export default {
       // this.lpsForRevolution = this.players.map(p => 0);
     },
     revolutionLPs(action, index) {
-      let modifiedPlayer = {}
-      if (action == 'add') {
-        if (this.players[index].LP > 0) { // > this.lpsForRevolution[index]
-          this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]+1)
-
-          Object.assign(modifiedPlayer, this.players[index])
-          modifiedPlayer.LP--
-          let op = [{
-            p: ['players', index],
-            ld: this.players[index],
-            li: modifiedPlayer
-          }]
-          sharedb.submitOperation(op)
-        }
+      if (action === 'add' && this.lpsForRevolution[index] < this.players[index].LP) {
+        // this.lpsForRevolution[index] ++
+        this.$set(this.lpsForRevolution, index, parseInt(this.lpsForRevolution[index])+1)
       } else if (action == 'sub' && this.lpsForRevolution[index] > 0) {
+        // this.lpsForRevolution[index] --
         this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]-1)
-
-        Object.assign(modifiedPlayer, this.players[index])
-        modifiedPlayer.LP++
-        // modifiedPlayer.revolutions.push
-        let op = [{
-          p: ['players', index],
-          ld: this.players[index],
-          li: modifiedPlayer
-        }]
-        sharedb.submitOperation(op)
       }
     },
     commonise() {
@@ -99,11 +93,33 @@ export default {
       // empty revolutionaries array
       this.revolutionaries.splice(0, -1)
       // ruaj piket e harxhuara nga secili user gjate revolucionit
-      let op = [{
-        p: ['revolutions', this.revolutions.length],
-        li: revolution
-      }]
-      sharedb.submitOperation(op)
+      let i = 0;
+      let updateInterval = setInterval(() => {
+        if (i < this.players.length) {
+          // update players LPs
+          let modifiedPlayer = {}
+          Object.assign(modifiedPlayer, this.players[i])
+          modifiedPlayer.LP -= this.lpsForRevolution[i]
+          this.$set(this.lpsForRevolution, i, 0)
+          // modifiedPlayer.revolutions.push
+          let op = [{
+            p: ['players', i],
+            ld: this.players[i],
+            li: modifiedPlayer
+          }]
+          sharedb.submitOperation(op)
+          i++;
+        } else {
+          // submit revolution data
+          let op = [{
+            p: ['revolutions', this.revolutions.length],
+            li: revolution
+          }]
+          sharedb.submitOperation(op)
+          clearInterval(updateInterval)
+          updateInterval = null;
+        }
+      }, 500)
       this.revolution = false
     },
     hasRevolution(roundIndex) {
@@ -112,32 +128,53 @@ export default {
     whichRevolution(roundIndex) {
       return this.revolutions.filter(r => r.round == roundIndex)[0]
     }
-  },
-  mounted() {
-    const el = document.getElementById('section.revolution-container');
-    if (el) {
-      el.setProperty('--number-of-players', this.players.length)
-    }
-
   }
 }
 </script>
 
 <style lang="scss" scoped>
 section {
-  --number-of-players: 0;
-  display: grid;
-  grid-template-columns: repeat(var(--number-of-players), minmax(300px, 1fr));
   margin-bottom: 0px;
   .full-row {
     grid-column: 1 / -1;
   }
+  .revolution-grid, .post-revolution-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--number-of-players), minmax(300px, 1fr));
+  }
   .revolution {
     padding: 10px;
     border: 1px solid gray;
+    .custom-input-container {
+      border: 1px solid rgba(0, 0, 0, .12);
+      display: inline-block;
+      .custom-input {
+        // appearance: none;
+        // -webkit-appearance: none;
+        // -moz-appearance: none;
+        // background: none;
+        border: none;
+        // -webkit-border-radius: 0;
+        // border-radius: 0;
+        // border-radius: none;
+        box-sizing: border-box;
+        // font-size: 1em;
+        // line-height: 1.5;
+        text-align: center;
+        display: inline-block;
+        width: 50px;
+      }
+      .custom-input-btn {
+        background-color: transparent;
+        color: gray;
+      }
+    }
+
     button {
       font-weight: bold;
       background-color: #ef767a; //#a11a1b;
+      // background-color: transparent;
+
       &:hover, &:active, &:disabled, &:focus {
         border: 1px solid #ef767a;
       }

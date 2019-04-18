@@ -1,30 +1,18 @@
 <template lang="html">
-  <section v-if="singlePlayer" class="single-player-view">
+  <section v-if="singlePlayer" class="single-player-view simple-container">
     <!-- <h1>Single player view</h1> -->
     <button type="button" name="button" class="refresh-btn" @click="refreshData()">&#8635;</button>
     <h1>{{ singlePlayer.name }} / {{ singlePlayer.character }}</h1>
-    <!-- <div class="coins wp">
-      {{ singlePlayer.WP }}
-    </div>
-    <div class="coins lp">
-      {{ singlePlayer.LP }}
-    </div> -->
+
     <Coins :wp="singlePlayer.WP" :lp="singlePlayer.LP"/>
     <Skills :health="singlePlayer.h" :urban="singlePlayer.u" :intangible="singlePlayer.i" :environmental="singlePlayer.e"/>
-    <!-- <div class="unlocks health">
-      {{ filterGoods('health') }}
-    </div>
-    <div class="unlocks urban">
-      {{ filterGoods('urban') }}
-    </div>
-    <div class="unlocks intangible">
-      {{ filterGoods('intangible') }}
-    </div>
-    <div class="unlocks environmental">
-      {{ filterGoods('environmental') }}
-    </div> -->
+
     <Unlocked :playerIndex="playerIndex"/>
     <!-- {{ playerIndex }} -->
+
+    <span v-if="isRevolutionary(singlePlayer.name) > 0" class="star"
+      v-for="r in isRevolutionary(singlePlayer.name)"></span>
+
     <div class="group-lp">
       Group LPs: {{ totalLP }}
     </div>
@@ -75,7 +63,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(['singlePlayer', 'round', 'players', 'gameId']),
+    ...mapState(['singlePlayer', 'round', 'players', 'gameId', 'revolutions']),
     playerIndex() {
       return this.players.indexOf(this.singlePlayer)
     },
@@ -118,6 +106,13 @@ export default {
     },
     filterGoods(type) {
       return this.singlePlayer.goodsUnlocked.filter(g => g == type).length
+    },
+    isRevolutionary(name) {
+      let uprisings = [];
+      this.revolutions.forEach(r => {
+        if (r.revolutionaries.indexOf(name) !== -1) uprisings.push(r.round)
+      })
+      return uprisings.length
     },
     refreshData() {
       sharedb.refresh(this.gameId)
