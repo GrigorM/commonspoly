@@ -76,4 +76,14 @@ body {
 .simple-container {
   max-width: 600px;
 }
+
+.star {
+  margin: auto;
+  width: 25px;
+  height: 25px;
+  display: inline-block;
+  background-color: #c21b1c;
+  -webkit-clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
 </style>

@@ -38,6 +38,7 @@ export default new Vuex.Store({
       // state.singlePlayer = state.players[playerIndex]
       Vue.set(state, 'players', [...data.players])
       state.singlePlayer = state.players[data.playerIndex]
+      state.round = data.round
     },
     SET_GAMEID(state, data) {
       state.gameId = data.gameId

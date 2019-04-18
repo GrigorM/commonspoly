@@ -1,20 +1,14 @@
 <template lang="html">
   <section id="container">
     <div class="" v-if="role === 'master'">
-      <h3>Game: {{ gameId }}</h3>
-      <p>Total LP: {{ totalLP }}</p>
+      <h1>Game: {{ gameId }}</h1>
+      <h2>Total LP: {{ totalLP }}</h2>
       <div class="table" id="gameTable">
-        <!-- {{ player.name }}, playing as {{ player.character }}, has {{ player.WP }} welfare points and {{ player.LP }} legitimacy points -->
         <div class="header">
           <div class="header-cell" v-for="(player, index) in players" :key="index">
             {{ player.character }} / {{ player.name }} <br/>
             WP: {{ player.WP }} <br/>
             LP: {{ player.LP }} <br/>
-            <!-- <span class="goods-unlocked" v-for="good in player.goodsUnlocked" :class="good"></span> -->
-            <!-- {{ totalForGood(index, 'health') }} <span class="goods-unlocked health"></span> /
-            {{ totalForGood(index, 'urban') }} <span class="goods-unlocked urban"></span> /
-            {{ totalForGood(index, 'intangible') }} <span class="goods-unlocked intangible"></span> /
-            {{ totalForGood(index, 'environmental') }} <span class="goods-unlocked environmental"></span>  -->
             <Unlocked :playerIndex="index"/>
             <!-- <br/> -->
             <span v-if="isRevolutionary(player.name) > 0" class="star"
@@ -23,6 +17,7 @@
         </div>
         <div class="rounds">
           <div class="round" v-for="roundIndex in round" :key="100+roundIndex" :class="collapsed(roundIndex)">
+
             <div class="full-row round-number">
               <span @click="viewRound(roundIndex)">Round {{ roundIndex }}</span>
             </div>
@@ -31,34 +26,8 @@
               <button type="button" name="button" @click="updatePlayer(player.character, roundIndex, index)">Edit</button>
             </div>
 
+            <Uprising :roundIndex="roundIndex" class="full-row revolution-container"/>
 
-            <div class="full-row revolution" v-if="!hasRevolution(roundIndex) && roundIndex==round">
-              <button type="button" name="button" @click="startUprising" v-if="!revolution"
-                :disabled="totalLP < 10*players.length">
-                Start collective uprising
-              </button>
-              <div class="" v-if="revolution"> <!--v-if="revolution" -->
-                <button type="button" name="button" @click="commonise"
-                :disabled="revolutionPoints < 10*players.length || revolutionaries.length < 2">
-                  Commonise!
-                </button>
-                <span>Total points: {{ revolutionPoints }}</span>
-              </div>
-            </div>
-            <div class="revolution" v-for="(player, playerIndex) in players" :key="700+playerIndex" v-if="revolution && !hasRevolution(roundIndex)">
-              <input type="checkbox" name="revolutionaries" :value="player.name"
-                v-model="revolutionaries" :disabled="revolutionaries.length >= 2"><br>
-              <span>Contribute LPs</span>
-              <button type="button" name="button" @click="revolutionLPs('sub', playerIndex)">-</button>
-              <button type="button" name="button" @click="revolutionLPs('add', playerIndex)">+</button>
-              Contribution: {{ lpsForRevolution[playerIndex] }}
-            </div>
-            <div class="revolution-data"  v-for="(player, playerIndex) in players" v-if="hasRevolution(roundIndex)">
-              <!-- v-for="rev in whichRevolution(roundIndex)" -->
-              <span class="star" v-if="whichRevolution(roundIndex).revolutionaries.indexOf(player.name) !== -1" ></span>
-              <span v-else class="nostar"></span>
-              Contribution: {{ whichRevolution(roundIndex).lps[playerIndex] }} LPs
-            </div>
           </div>
         </div>
         <button class="next-round" type="button" name="button" @click="addRound()">Next round</button>
@@ -76,13 +45,15 @@ import UnlockGoods from '@/components/UnlockGoods'
 import PointsTracker from '@/components/PointsTracker'
 import SelectedPlayer from '@/components/SelectedPlayer'
 import Unlocked from '@/components/Unlocked'
+import Uprising from '@/components/Uprising'
 
 export default {
   components: {
     UnlockGoods,
     PointsTracker,
     SelectedPlayer,
-    Unlocked
+    Unlocked,
+    Uprising
   },
   data() {
     return {
@@ -90,10 +61,6 @@ export default {
       selectedRound: null,
       selectedPlayerIndex: null,
       id: '',
-      revolution: false,
-      // revolutionPoints: 0,
-      revolutionaries: [],
-      lpsForRevolution: []
     }
   },
   computed: {
@@ -118,7 +85,6 @@ export default {
         na: 1
       }]
       sharedb.submitOperation(op);
-      // this.$store.dispatch('incrementRound')
     },
     collapsed(round) {
       if (round < this.round && !(this.activeRound === round)) return 'collapsed'
@@ -144,64 +110,6 @@ export default {
     viewRound(roundIndex) {
       this.activeRound = roundIndex
     },
-    startUprising() {
-      this.revolution = true
-      // this.players.forEach(p => this.lpsForRevolution.push(0))
-      for(let i=0; i<this.players.length; i++) {
-        this.$set(this.lpsForRevolution, i, 0)
-      }
-      // this.lpsForRevolution = this.players.map(p => 0);
-    },
-    revolutionLPs(action, index) {
-      let modifiedPlayer = {}
-      if (action == 'add') {
-        if (this.players[index].LP > 0) { // > this.lpsForRevolution[index]
-          this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]+1)
-
-          Object.assign(modifiedPlayer, this.players[index])
-          modifiedPlayer.LP--
-          let op = [{
-            p: ['players', index],
-            ld: this.players[index],
-            li: modifiedPlayer
-          }]
-          sharedb.submitOperation(op)
-        }
-      } else if (action == 'sub' && this.lpsForRevolution[index] > 0) {
-        this.$set(this.lpsForRevolution, index, this.lpsForRevolution[index]-1)
-
-        Object.assign(modifiedPlayer, this.players[index])
-        modifiedPlayer.LP++
-        // modifiedPlayer.revolutions.push
-        let op = [{
-          p: ['players', index],
-          ld: this.players[index],
-          li: modifiedPlayer
-        }]
-        sharedb.submitOperation(op)
-      }
-    },
-    commonise() {
-      let revolution = {};
-      revolution.revolutionaries = this.revolutionaries
-      revolution.lps = this.lpsForRevolution
-      revolution.round = this.round
-      // empty revolutionaries array
-      this.revolutionaries.splice(0, -1)
-      // ruaj piket e harxhuara nga secili user gjate revolucionit
-      let op = [{
-        p: ['revolutions', this.revolutions.length],
-        li: revolution
-      }]
-      sharedb.submitOperation(op)
-      this.revolution = false
-    },
-    hasRevolution(roundIndex) {
-      return this.revolutions.findIndex(r => r.round == roundIndex) !== -1 ? true : false
-    },
-    whichRevolution(roundIndex) {
-      return this.revolutions.filter(r => r.round == roundIndex)[0]
-    },
     isRevolutionary(name) {
       let uprisings = [];
       this.revolutions.forEach(r => {
@@ -213,36 +121,17 @@ export default {
   mounted() {
     if (this.players.length === 0)
       sharedb.load(this.$route.params.gameId)
-    // console.log(this.$route.params.gameId);
-    let el = document.getElementById('gameTable');
-    if (el) {
-      el.style.setProperty('--number-of-players', this.players.length)
-      setTimeout(() => {
-        let el = document.getElementById('gameTable');
-        el.style.setProperty('--number-of-players', this.players.length)
-      }, 1000)
-    }
-
+    document.documentElement.style.setProperty('--number-of-players', this.players.length)
   }
 };
 </script>
 
 <style lang="scss" scoped>
 #container {
-  --number-of-players: 0;
   color: #003949;
 }
 #gameTable {
   overflow-x: scroll;
-  .star {
-    margin: auto;
-    width: 25px;
-    height: 25px;
-    display: inline-block;
-    background-color: #c21b1c;
-    -webkit-clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-  }
   .table {
     display: grid;
   }
@@ -291,7 +180,7 @@ export default {
       transition: height .5s;
       &.collapsed {
         // height: 50px;
-        .edit-player-box, .revolution-data, .revolution {
+        .edit-player-box, .revolution-data, .revolution, .revolution-container {
           // opacity: 0;
           // visibility: hidden;
           display: none;
@@ -357,28 +246,6 @@ export default {
         button {
           background-color: var(--color-primary);
           border-radius: 2px;
-        }
-      }
-      .revolution {
-        padding: 10px;
-        border: 1px solid gray;
-        button {
-          font-weight: bold;
-          background-color: #ef767a; //#a11a1b;
-          &:hover, &:active, &:disabled, &:focus {
-            border: 1px solid #ef767a;
-          }
-        }
-      }
-      .revolution-data {
-        height: 50px;
-        text-align: center;
-        .star {
-          display: block;
-        }
-        .nostar {
-          height: 25px;
-          display: block;
         }
       }
 
